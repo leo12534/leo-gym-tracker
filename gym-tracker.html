@@ -1,0 +1,944 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1f3d;
+    --navy-mid: #1a3060;
+    --blue-accent: #2563eb;
+    --blue-light: #3b82f6;
+    --gold: #f59e0b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --bg: #f0f4f8;
+    --card-bg: #ffffff;
+    --text: #0f1f3d;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --input-bg: #f8fafc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+    -webkit-text-size-adjust: 100%;
+  }
+  .app-header {
+    background: var(--navy);
+    padding: 1rem 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .app-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .app-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: #fff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .app-title span { color: var(--gold); }
+  .sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+    transition: background 0.3s;
+  }
+  .sync-dot.syncing { background: var(--gold); animation: pulse 1s infinite; }
+  .sync-dot.synced { background: var(--success); }
+  .sync-dot.error { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .tab-bar {
+    display: flex;
+    gap: 0;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.75rem 0;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    min-height: 48px;
+  }
+  .tab-btn.active {
+    color: #fff;
+    border-bottom-color: var(--gold);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .container { padding: 0.625rem; width: 100%; max-width: 680px; margin: 0 auto; }
+
+  .setup-banner {
+    background: linear-gradient(135deg, var(--navy-mid), var(--navy));
+    border: 1px solid var(--blue-accent);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    color: #fff;
+  }
+  .setup-banner h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+  .setup-banner p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.75rem; line-height: 1.5; }
+  .setup-input-row { display: flex; gap: 8px; }
+  .setup-input-row input {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #fff;
+    font-size: 0.8rem;
+    font-family: 'Barlow', sans-serif;
+  }
+  .setup-input-row input::placeholder { color: #475569; }
+  .btn {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--blue-accent); color: #fff; }
+  .btn-primary:hover { background: var(--blue-light); }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: #fbbf24; }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .workout-header {
+    background: var(--navy);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .workout-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+    color: #fff;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .workout-label span { color: var(--gold); }
+  .workout-meta { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
+  .workout-date-badge {
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+  }
+  .workout-date-badge .date-day {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+    line-height: 1;
+  }
+  .workout-date-badge .date-sub { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #fff;
+    background: var(--navy-mid);
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 0.75rem 0 0.5rem;
+  }
+
+  .exercise-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 0.625rem;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .exercise-card.logged { border-color: #86efac; }
+  .exercise-card-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: 0.75rem;
+    min-height: 64px;
+  }
+  .ex-number {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .exercise-card.logged .ex-number { background: var(--success); }
+  .ex-info { flex: 1; }
+  .ex-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+  .ex-prescription {
+    font-size: 0.85rem;
+    color: var(--blue-accent);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .ex-last {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .ex-last strong { color: var(--text); font-weight: 600; }
+  .ex-actions { display: flex; gap: 6px; align-items: center; }
+  .log-check {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: transparent;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+  .log-check.checked {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+
+  .exercise-log-panel {
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    background: var(--input-bg);
+    display: none;
+  }
+  .exercise-log-panel.open { display: block; }
+  .log-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .log-field label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .log-field input, .log-field select {
+    width: 100%;
+    padding: 0.65rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: #fff;
+    font-family: 'Barlow', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    transition: border-color 0.15s;
+    min-height: 48px;
+  }
+  .log-field input:focus, .log-field select:focus {
+    outline: none;
+    border-color: var(--blue-accent);
+  }
+  .log-save-row { display: flex; justify-content: flex-end; gap: 8px; align-items: center; margin-top: 4px; }
+  .btn-save-ex { width: 100%; padding: 0.75rem; font-size: 1rem; min-height: 48px; }
+  .log-saved-msg {
+    font-size: 0.75rem;
+    color: var(--success);
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .log-saved-msg.show { opacity: 1; }
+
+  .weight-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .weight-card h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--navy);
+    margin-bottom: 0.875rem;
+  }
+  .weight-input-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+    margin-bottom: 0.75rem;
+  }
+  .weight-input-row input {
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--input-bg);
+  }
+  .weight-input-row input:focus { outline: none; border-color: var(--blue-accent); }
+  .weight-input-row input::placeholder { font-weight: 400; color: #cbd5e1; }
+
+  .weight-history {
+    margin-top: 1rem;
+  }
+  .weight-history-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .weight-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+  }
+  .weight-row:last-child { border-bottom: none; }
+  .weight-row .w-date { color: var(--text-muted); font-size: 0.8rem; }
+  .weight-row .w-val { font-weight: 700; font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; }
+  .weight-row .w-delta { font-size: 0.75rem; font-weight: 600; }
+  .w-delta.up { color: var(--danger); }
+  .w-delta.down { color: var(--success); }
+
+  .history-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.625rem;
+  }
+  .history-card h4 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .history-card h4 span { color: var(--text-muted); font-weight: 400; font-size: 0.8rem; }
+  .history-ex-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+  .history-ex-row:last-child { border-bottom: none; }
+  .history-ex-row .h-name { font-weight: 500; }
+  .history-ex-row .h-val { color: var(--blue-accent); font-weight: 600; font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 0.75rem; opacity: 0.3; }
+  .empty-state p { font-size: 0.875rem; }
+
+  .variation-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: #fff;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    font-family: 'Barlow Condensed', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+  }
+  .chip.selected {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+  .no-script-url {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    color: #92400e;
+    margin-bottom: 0.75rem;
+    text-align: center;
+  }
+</style>
+
+<div class="app-header">
+  <div class="app-header-top">
+    <div class="app-title">Gym<span>Track</span></div>
+    <div class="sync-indicator">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Offline</span>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('workout')">Today</button>
+    <button class="tab-btn" onclick="switchTab('weight')">Weight</button>
+    <button class="tab-btn" onclick="switchTab('history')">History</button>
+    <button class="tab-btn" onclick="switchTab('settings')">Setup</button>
+  </div>
+</div>
+
+<div id="tab-workout" class="tab-content active">
+  <div class="container">
+    <div id="workoutHeaderEl"></div>
+    <div id="exerciseList"></div>
+  </div>
+</div>
+
+<div id="tab-weight" class="tab-content">
+  <div class="container">
+    <div class="weight-card">
+      <h3>📊 Body Weight Log</h3>
+      <div class="weight-input-row">
+        <input type="number" id="weightInput" placeholder="kg" step="0.1" min="30" max="300">
+        <input type="text" id="weightNotes" placeholder="Notes (optional)">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveWeight()">Save Today's Weight</button>
+      <div class="weight-history" id="weightHistory"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-history" class="tab-content">
+  <div class="container">
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<div id="tab-settings" class="tab-content">
+  <div class="container">
+    <div class="setup-banner">
+      <h3>⚡ Google Sheets Setup</h3>
+      <p>Paste your Apps Script Web App URL below. Once connected, all your workout and weight data syncs automatically to your Google Sheet.</p>
+      <div class="setup-input-row">
+        <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/..." />
+        <button class="btn btn-gold" onclick="saveScriptUrl()">Save</button>
+      </div>
+    </div>
+    <div class="setup-banner" style="margin-top:0.5rem; border-color: #334155;">
+      <h3 style="color:#94a3b8">How to deploy</h3>
+      <p style="line-height:1.7">
+        1. Go to <strong style="color:#fff">script.google.com</strong> → New project<br>
+        2. Paste the <strong style="color:#fff">GymTracker_AppsScript.gs</strong> code<br>
+        3. Click <strong style="color:#fff">Deploy → New deployment</strong><br>
+        4. Type: <strong style="color:#fff">Web app</strong><br>
+        5. Execute as: <strong style="color:#fff">Me</strong><br>
+        6. Who has access: <strong style="color:#fff">Anyone</strong><br>
+        7. Click Deploy → copy the URL → paste above
+      </p>
+    </div>
+    <div class="setup-banner" style="margin-top:0.5rem; border-color: #334155;">
+      <h3 style="color:#94a3b8">Current session</h3>
+      <p id="settingsStatus" style="line-height:1.7; color:#cbd5e1; font-size:0.8rem">Loading...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKOUTS = {
+  A: {
+    sections: [
+      {
+        label: "Main Lifts",
+        exercises: [
+          { id: "squat", name: "Squat", sets: [3], reps: [5], notes: "3 sets &times; 5 reps" },
+          { id: "bench_press", name: "Bench Press", sets: [3], reps: [5,8], notes: "3 sets &times; 5&ndash;8 reps" },
+          { id: "chest_row", name: "Chest-Supported Row (Machine)", sets: [3], reps: [10], notes: "3 sets &times; 10 reps" }
+        ]
+      },
+      {
+        label: "Glutes / Back Accessories",
+        exercises: [
+          { id: "rdl", name: "Romanian Deadlift (RDL)", sets: [3], reps: [8], notes: "3 sets &times; 8 reps" },
+          { id: "hip_thrust", name: "Hip Thrust / Glute Bridge", sets: [3], reps: [10,12], notes: "3 sets &times; 10&ndash;12 reps" },
+          { id: "face_pulls", name: "Face Pulls", sets: [2,3], reps: [15], notes: "2&ndash;3 sets &times; 15 reps" }
+        ]
+      }
+    ]
+  },
+  B: {
+    sections: [
+      {
+        label: "Main Lifts",
+        exercises: [
+          { id: "deadlift", name: "Deadlift", sets: [2,3], reps: [5], notes: "2&ndash;3 sets &times; 5 reps" },
+          { id: "ohp", name: "Overhead Press", sets: [3], reps: [5,8], notes: "3 sets &times; 5&ndash;8 reps" },
+          { id: "lat_pulldown", name: "Lat Pulldown / Assisted Pullups", sets: [3], reps: [8,10], notes: "3 sets &times; 8&ndash;10 reps" }
+        ]
+      },
+      {
+        label: "Glutes / Back Accessories",
+        exercises: [
+          { id: "leg_press", name: "Leg Press", sets: [3], reps: [10,12], notes: "3 sets &times; 10&ndash;12 reps" },
+          { id: "seated_cable_row", name: "Seated Cable Row", sets: [3], reps: [10], notes: "3 sets &times; 10 reps" },
+          { id: "cable_pullthrough", name: "Cable Pull-Through", sets: [2,3], reps: [12,15], notes: "2&ndash;3 sets &times; 12&ndash;15 reps" }
+        ]
+      }
+    ]
+  }
+};
+
+let SCRIPT_URL = localStorage.getItem('gymtrack_script_url') || '';
+let todayLogs = {};
+let weightLogs = [];
+let allLogs = [];
+let currentWorkout = 'A';
+const today = new Date().toISOString().split('T')[0];
+
+function getState() {
+  try { return JSON.parse(localStorage.getItem('gymtrack_state') || '{}'); } catch(e) { return {}; }
+}
+function setState(obj) {
+  const s = getState();
+  Object.assign(s, obj);
+  localStorage.setItem('gymtrack_state', JSON.stringify(s));
+}
+
+function getTodayWorkout() {
+  const state = getState();
+  if (state.lastDate === today) {
+    return state.currentWorkout || 'A';
+  }
+  if (state.lastDate && state.lastDate < today) {
+    const next = (state.currentWorkout === 'A') ? 'B' : 'A';
+    setState({ currentWorkout: next, lastDate: today });
+    return next;
+  }
+  if (!state.currentWorkout) {
+    setState({ currentWorkout: 'A', lastDate: today });
+    return 'A';
+  }
+  setState({ lastDate: today });
+  return state.currentWorkout;
+}
+
+function setSyncState(s) {
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + s;
+  if (s === 'syncing') label.textContent = 'Syncing';
+  else if (s === 'synced') label.textContent = 'Synced';
+  else if (s === 'error') label.textContent = 'Error';
+  else label.textContent = 'Offline';
+}
+
+async function apiFetch(params) {
+  if (!SCRIPT_URL) return null;
+  setSyncState('syncing');
+  try {
+    const url = SCRIPT_URL + '?' + new URLSearchParams(params);
+    const res = await fetch(url, { redirect: 'follow' });
+    const text = await res.text();
+    const data = JSON.parse(text);
+    if (data.error) throw new Error(data.error);
+    setSyncState('synced');
+    return data;
+  } catch(e) {
+    setSyncState('error');
+    console.error('apiFetch error:', e.message, e);
+    document.getElementById('syncLabel').title = e.message;
+    return null;
+  }
+}
+
+async function loadTodayLogs() {
+  const data = await apiFetch({ action: 'getLogs' });
+  if (data && data.logs) {
+    allLogs = data.logs;
+    todayLogs = {};
+    data.logs.filter(l => l.date === today).forEach(l => {
+      todayLogs[l.exercise] = l;
+    });
+    setSyncState('synced');
+  } else {
+    const saved = getState().todayLogs || {};
+    if (saved.date === today) todayLogs = saved.logs || {};
+    setSyncState(SCRIPT_URL ? 'error' : '');
+  }
+  renderWorkout();
+}
+
+async function loadWeightLogs() {
+  const data = await apiFetch({ action: 'getWeightLog' });
+  if (data && data.logs) {
+    weightLogs = data.logs;
+    const state = getState();
+    setState({ weightLogs: data.logs });
+  } else {
+    weightLogs = getState().weightLogs || [];
+  }
+  renderWeightHistory();
+}
+
+async function loadHistory() {
+  if (allLogs.length === 0) {
+    const data = await apiFetch({ action: 'getLogs' });
+    if (data && data.logs) allLogs = data.logs;
+    else allLogs = getState().allLogs || [];
+  }
+  renderHistory();
+}
+
+function renderWorkout() {
+  currentWorkout = getTodayWorkout();
+  const wData = WORKOUTS[currentWorkout];
+  const dateObj = new Date();
+  const dayName = dateObj.toLocaleDateString('en-GB', { weekday: 'long' });
+  const dateStr = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+  document.getElementById('workoutHeaderEl').innerHTML = `
+    <div class="workout-header">
+      <div>
+        <div class="workout-label">Workout <span>${currentWorkout}</span></div>
+        <div class="workout-meta">${dayName}</div>
+      </div>
+      <div class="workout-date-badge">
+        <div class="date-day">${dateStr}</div>
+        <div class="date-sub">Today</div>
+      </div>
+    </div>
+  `;
+
+  let html = '';
+  wData.sections.forEach(section => {
+    html += `<div class="section-label">${section.label}</div>`;
+    section.exercises.forEach(ex => {
+      const log = todayLogs[ex.id];
+      const isLogged = !!log;
+      const prevLog = getPreviousLog(ex.id);
+      html += buildExerciseCard(ex, log, isLogged, prevLog);
+    });
+  });
+  document.getElementById('exerciseList').innerHTML = html;
+}
+
+function buildExerciseCard(ex, log, isLogged, prevLog) {
+  const hasSetVar = ex.sets.length > 1;
+  const hasRepVar = ex.reps.length > 1;
+
+  let variationHtml = '';
+  if (hasSetVar || hasRepVar) {
+    variationHtml = '<div class="variation-chips">';
+    if (hasSetVar) {
+      ex.sets.forEach(s => {
+        const sel = (log && parseInt(log.sets) === s) ? 'selected' : (!log && s === ex.sets[0] ? 'selected' : '');
+        variationHtml += `<div class="chip ${sel}" onclick="selectChip(this,'sets','${ex.id}')" data-val="${s}">${s} sets</div>`;
+      });
+    }
+    if (hasRepVar) {
+      ex.reps.forEach(r => {
+        const sel = (log && parseInt(log.reps) === r) ? 'selected' : (!log && r === ex.reps[0] ? 'selected' : '');
+        variationHtml += `<div class="chip ${sel}" onclick="selectChip(this,'reps','${ex.id}')" data-val="${r}">${r} reps</div>`;
+      });
+    }
+    variationHtml += '</div>';
+  }
+
+  return `
+    <div class="exercise-card${isLogged ? ' logged' : ''}" id="card-${ex.id}">
+      <div class="exercise-card-header" onclick="togglePanel('${ex.id}')">
+        <div class="ex-number">${isLogged ? '✓' : ''}</div>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-prescription">${ex.notes}</div>
+          ${prevLog ? `<div class="ex-last">Last: <strong>${prevLog.sets}&times;${prevLog.reps} @ ${prevLog.weight}kg</strong></div>` : ''}
+        </div>
+        <div class="ex-actions">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();togglePanel('${ex.id}')">Log</button>
+        </div>
+      </div>
+      <div class="exercise-log-panel${isLogged ? ' open' : ''}" id="panel-${ex.id}">
+        ${variationHtml}
+        <div class="log-row">
+          <div class="log-field">
+            <label>Sets</label>
+            <input type="number" id="sets-${ex.id}" value="${log ? log.sets : ex.sets[0]}" min="1" max="10">
+          </div>
+          <div class="log-field">
+            <label>Reps</label>
+            <input type="number" id="reps-${ex.id}" value="${log ? log.reps : ex.reps[0]}" min="1" max="50">
+          </div>
+          <div class="log-field">
+            <label>Weight (kg)</label>
+            <input type="number" id="weight-${ex.id}" value="${log ? log.weight : ''}" placeholder="0" step="0.5" min="0">
+          </div>
+        </div>
+        <div class="log-save-row">
+          <span class="log-saved-msg" id="saved-${ex.id}">✓ Saved</span>
+          <button class="btn btn-primary btn-save-ex" onclick="saveExerciseLog('${ex.id}')">Save</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function togglePanel(exId) {
+  const panel = document.getElementById('panel-' + exId);
+  panel.classList.toggle('open');
+}
+
+function selectChip(el, type, exId) {
+  const siblings = el.parentElement.querySelectorAll('.chip');
+  siblings.forEach(c => {
+    if (type === 'sets' && c.dataset.val && !isNaN(c.dataset.val) && c.textContent.includes('sets')) c.classList.remove('selected');
+    if (type === 'reps' && c.dataset.val && !isNaN(c.dataset.val) && c.textContent.includes('reps')) c.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  const input = document.getElementById(type + '-' + exId);
+  if (input) input.value = el.dataset.val;
+}
+
+async function saveExerciseLog(exId) {
+  const sets = document.getElementById('sets-' + exId).value;
+  const reps = document.getElementById('reps-' + exId).value;
+  const weight = document.getElementById('weight-' + exId).value;
+
+  const logEntry = { date: today, workout: currentWorkout, exercise: exId, sets, reps, weight };
+  todayLogs[exId] = logEntry;
+
+  const state = getState();
+  const allLocalLogs = state.allLogs || [];
+  const idx = allLocalLogs.findIndex(l => l.date === today && l.exercise === exId);
+  if (idx >= 0) allLocalLogs[idx] = logEntry; else allLocalLogs.push(logEntry);
+  setState({ allLogs: allLocalLogs, todayLogs: { date: today, logs: todayLogs } });
+
+  const card = document.getElementById('card-' + exId);
+  card.classList.add('logged');
+  card.querySelector('.ex-number').textContent = '✓';
+
+  const msg = document.getElementById('saved-' + exId);
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2000);
+
+  if (SCRIPT_URL) {
+    await apiFetch({ action: 'saveLog', ...logEntry });
+  }
+}
+
+async function saveWeight() {
+  const val = document.getElementById('weightInput').value;
+  const notes = document.getElementById('weightNotes').value;
+  if (!val) return;
+
+  const entry = { date: today, weight_kg: val, notes };
+  const existing = weightLogs.findIndex(l => l.date === today);
+  if (existing >= 0) weightLogs[existing] = entry; else weightLogs.unshift(entry);
+  setState({ weightLogs });
+  renderWeightHistory();
+
+  if (SCRIPT_URL) {
+    await apiFetch({ action: 'saveWeight', date: today, weight: val, notes });
+  }
+}
+
+function renderWeightHistory() {
+  const sorted = [...weightLogs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+  if (!sorted.length) {
+    document.getElementById('weightHistory').innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><p>No weight entries yet</p></div>';
+    return;
+  }
+
+  let html = '<div class="weight-history-title">Recent entries</div>';
+  sorted.forEach((entry, i) => {
+    const prev = sorted[i + 1];
+    let delta = '';
+    if (prev) {
+      const diff = parseFloat(entry.weight_kg) - parseFloat(prev.weight_kg);
+      const sign = diff > 0 ? '+' : '';
+      const cls = diff > 0 ? 'up' : 'down';
+      delta = `<span class="w-delta ${cls}">${sign}${diff.toFixed(1)}</span>`;
+    }
+    const d = new Date(entry.date);
+    const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    html += `<div class="weight-row"><span class="w-date">${label}</span><span class="w-val">${parseFloat(entry.weight_kg).toFixed(1)} kg</span>${delta}</div>`;
+  });
+  document.getElementById('weightHistory').innerHTML = html;
+}
+
+function renderHistory() {
+  const logs = allLogs.length ? allLogs : (getState().allLogs || []);
+  if (!logs.length) {
+    document.getElementById('historyList').innerHTML = `<div class="empty-state"><div class="empty-icon">🏋️</div><p>No workout history yet.<br>Start logging your sessions!</p></div>`;
+    return;
+  }
+
+  const byDate = {};
+  logs.forEach(l => {
+    if (!byDate[l.date]) byDate[l.date] = { workout: l.workout, exercises: [] };
+    byDate[l.date].exercises.push(l);
+  });
+
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  let html = '';
+  dates.forEach(date => {
+    const session = byDate[date];
+    const d = new Date(date);
+    const label = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    html += `<div class="history-card"><h4>Workout ${session.workout} <span>${label}</span></h4>`;
+    session.exercises.forEach(ex => {
+      const exDef = findExercise(ex.exercise);
+      const name = exDef ? exDef.name : ex.exercise;
+      html += `<div class="history-ex-row"><span class="h-name">${name}</span><span class="h-val">${ex.sets}&times;${ex.reps} @ ${ex.weight}kg</span></div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('historyList').innerHTML = html;
+}
+
+function getPreviousLog(exId) {
+  const logs = allLogs.length ? allLogs : (getState().allLogs || []);
+  const past = logs.filter(l => l.exercise === exId && l.date < today);
+  if (!past.length) return null;
+  past.sort((a, b) => b.date.localeCompare(a.date));
+  return past[0];
+}
+
+function findExercise(id) {
+  for (const w of Object.values(WORKOUTS)) {
+    for (const s of w.sections) {
+      const ex = s.exercises.find(e => e.id === id);
+      if (ex) return ex;
+    }
+  }
+  return null;
+}
+
+function saveScriptUrl() {
+  const url = document.getElementById('scriptUrlInput').value.trim();
+  if (!url) return;
+  SCRIPT_URL = url;
+  localStorage.setItem('gymtrack_script_url', url);
+  updateSettingsStatus();
+  loadTodayLogs();
+  loadWeightLogs();
+}
+
+function updateSettingsStatus() {
+  const el = document.getElementById('settingsStatus');
+  if (!el) return;
+  const url = localStorage.getItem('gymtrack_script_url');
+  if (url) {
+    el.innerHTML = `Script URL: connected<br>Today's workout: <strong>${getTodayWorkout()}</strong><br>Today's date: ${today}`;
+  } else {
+    el.textContent = 'No script URL set. All data is saved locally until you connect.';
+  }
+  const input = document.getElementById('scriptUrlInput');
+  if (input && url) input.value = url;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'weight') loadWeightLogs();
+  if (tab === 'history') loadHistory();
+  if (tab === 'settings') updateSettingsStatus();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) renderWorkout();
+});
+
+if (SCRIPT_URL) {
+  setSyncState('synced');
+  loadTodayLogs();
+} else {
+  setSyncState('');
+  renderWorkout();
+}
+updateSettingsStatus();
+</script>

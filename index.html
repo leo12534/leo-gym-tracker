@@ -734,7 +734,7 @@ function buildExerciseCard(ex, log, isLogged, prevLog) {
 
   return `
     <div class="exercise-card${isLogged ? ' logged' : ''}" id="card-${ex.id}">
-      <div class="exercise-card-header" onclick="togglePanel('${ex.id}')">
+      <div class="exercise-card-header">
         <div class="ex-number">${isLogged ? '✓' : ''}</div>
         <div class="ex-info">
           <div class="ex-name">${ex.name}</div>
@@ -742,10 +742,13 @@ function buildExerciseCard(ex, log, isLogged, prevLog) {
           ${prevLog ? `<div class="ex-last">Last: <strong>${prevLog.sets}&times;${prevLog.reps} @ ${prevLog.weight}kg</strong></div>` : ''}
         </div>
         <div class="ex-actions">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();togglePanel('${ex.id}')">Log</button>
+          ${isLogged
+            ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();togglePanel('${ex.id}')">Edit</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();togglePanel('${ex.id}')">Log</button>`
+          }
         </div>
       </div>
-      <div class="exercise-log-panel${isLogged ? ' open' : ''}" id="panel-${ex.id}">
+      <div class="exercise-log-panel" id="panel-${ex.id}">
         ${variationHtml}
         <div class="log-row">
           <div class="log-field">

@@ -619,17 +619,22 @@ async function apiFetch(params) {
   if (!SCRIPT_URL) return null;
   setSyncState('syncing');
   try {
-    const url = SCRIPT_URL + '?' + new URLSearchParams(params);
-    const res = await fetch(url, { redirect: 'follow' });
+    const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      cache: 'no-cache'
+    });
     const text = await res.text();
-    const data = JSON.parse(text);
+    let data;
+    try { data = JSON.parse(text); }
+    catch(pe) { throw new Error('Bad response: ' + text.substring(0, 100)); }
     if (data.error) throw new Error(data.error);
     setSyncState('synced');
     return data;
   } catch(e) {
     setSyncState('error');
     console.error('apiFetch error:', e.message, e);
-    document.getElementById('syncLabel').title = e.message;
     return null;
   }
 }

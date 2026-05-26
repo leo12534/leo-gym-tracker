@@ -728,7 +728,10 @@ async function finishWorkout() {
   // Push all today's logs to Sheets
   if (SCRIPT_URL) {
     setSyncState('syncing');
-    const logsToSync = Object.values(todayLogs);
+    const logsToSync = Object.entries(todayLogs).map(([exId, log]) => ({
+      ...log,
+      exercise: log.exercise || exId
+    }));
     for (const log of logsToSync) {
       await apiFetch({ action: 'saveLog', ...log });
     }

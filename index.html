@@ -443,6 +443,77 @@
     border-color: var(--navy);
     color: #fff;
   }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--card-bg);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+  }
+  .modal-header {
+    background: var(--navy);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+  }
+  .modal-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-body { padding: 1.25rem; }
+  .modal-img {
+    width: 100%;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    background: var(--input-bg);
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .modal-img img { width: 100%; border-radius: 10px; display: block; }
+  .modal-img .no-img {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 2rem;
+  }
+  .modal-prescription {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--blue-accent);
+    margin-bottom: 0.5rem;
+  }
+  .modal-notes { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+
   .no-script-url {
     background: #fef3c7;
     border: 1px solid #fcd34d;
@@ -468,6 +539,22 @@
     <button class="tab-btn" onclick="switchTab('weight')">Weight</button>
     <button class="tab-btn" onclick="switchTab('history')">History</button>
     <button class="tab-btn" onclick="switchTab('settings')">Setup</button>
+  </div>
+</div>
+
+<div id="refModal" class="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalTitle">Exercise</h3>
+      <button class="modal-close" onclick="closeRefModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-img" id="modalImgWrap">
+        <div class="no-img">No image uploaded yet.<br>See setup instructions below.</div>
+      </div>
+      <div class="modal-prescription" id="modalPrescription"></div>
+      <div class="modal-notes" id="modalNotes"></div>
+    </div>
   </div>
 </div>
 
@@ -524,10 +611,45 @@
       <h3 style="color:#94a3b8">Current session</h3>
       <p id="settingsStatus" style="line-height:1.7; color:#cbd5e1; font-size:0.8rem">Loading...</p>
     </div>
+    <div class="setup-banner" style="margin-top:0.5rem; border-color: #ef4444;">
+      <h3 style="color:#ef4444;">Danger Zone</h3>
+      <p style="color:#cbd5e1; font-size:0.8rem; margin-bottom:0.75rem;">Reset clears all local state (current workout, cached logs). Your Google Sheet data is unaffected.</p>
+      <button class="btn" style="background:#ef4444;color:#fff;width:100%;" onclick="resetApp()">Reset Local Data</button>
+    </div>
   </div>
 </div>
 
 <script>
+const EXERCISE_NOTES = {
+  squat: "Keep chest up, knees tracking over toes. Break at hips and knees simultaneously. Drive through heels on the way up.",
+  bench_press: "Retract shoulder blades, slight arch. Bar path slightly diagonal — touch lower chest, press back toward face.",
+  chest_row: "Chest flat on pad. Pull elbows back and squeeze shoulder blades together at the top.",
+  rdl: "Hinge at hips, soft bend in knees. Bar stays close to legs. Feel the stretch in hamstrings before driving hips forward.",
+  hip_thrust: "Upper back on bench, bar over hips. Drive hips up, squeeze glutes hard at the top. Full hip extension.",
+  face_pulls: "Cable at face height. Pull toward face, elbows flared high. Externally rotate at the top.",
+  deadlift: "Bar over mid-foot. Hinge down, grip bar, brace core. Push floor away — don't think of it as a pull.",
+  ohp: "Bar at collar bone, elbows slightly forward. Press straight up, tuck head back as bar passes face.",
+  lat_pulldown: "Slight lean back. Pull bar to upper chest, lead with elbows. Squeeze lats at the bottom.",
+  leg_press: "Feet shoulder-width. Lower until 90°, don't lock knees at top. Drive through heels.",
+  seated_cable_row: "Sit tall, slight knee bend. Pull to lower abdomen, squeeze shoulder blades. Don't rock.",
+  cable_pullthrough: "Face away from cable. Hinge at hips, let cable pull between legs. Drive hips forward to stand."
+};
+
+const EXERCISE_VIDEOS = {
+  squat:              "https://www.youtube.com/shorts?search_query=barbell+squat+form+short",
+  bench_press:        "https://www.youtube.com/shorts?search_query=bench+press+form+short",
+  chest_row:          "https://www.youtube.com/shorts?search_query=chest+supported+row+machine+form+short",
+  rdl:                "https://www.youtube.com/shorts?search_query=romanian+deadlift+form+short",
+  hip_thrust:         "https://www.youtube.com/shorts?search_query=barbell+hip+thrust+form+short",
+  face_pulls:         "https://www.youtube.com/shorts?search_query=face+pulls+form+short",
+  deadlift:           "https://www.youtube.com/shorts?search_query=deadlift+form+short",
+  ohp:                "https://www.youtube.com/shorts?search_query=overhead+press+form+short",
+  lat_pulldown:       "https://www.youtube.com/shorts?search_query=lat+pulldown+form+short",
+  leg_press:          "https://www.youtube.com/shorts?search_query=leg+press+form+short",
+  seated_cable_row:   "https://www.youtube.com/shorts?search_query=seated+cable+row+form+short",
+  cable_pullthrough:  "https://www.youtube.com/shorts?search_query=cable+pull+through+form+short",
+};
+
 const WORKOUTS = {
   A: {
     sections: [
@@ -589,20 +711,25 @@ function setState(obj) {
 
 function getTodayWorkout() {
   const state = getState();
-  if (state.lastDate === today) {
-    return state.currentWorkout || 'A';
-  }
-  if (state.lastDate && state.lastDate < today) {
-    const next = (state.currentWorkout === 'A') ? 'B' : 'A';
-    setState({ currentWorkout: next, lastDate: today });
-    return next;
-  }
   if (!state.currentWorkout) {
-    setState({ currentWorkout: 'A', lastDate: today });
-    return 'A';
+    setState({ currentWorkout: 'B' });
+    return 'B';
   }
-  setState({ lastDate: today });
   return state.currentWorkout;
+}
+
+function confirmFinishWorkout() {
+  if (confirm('Done with Workout ' + currentWorkout + '? This will switch to Workout ' + (currentWorkout === 'A' ? 'B' : 'A') + '.')) {
+    finishWorkout();
+  }
+}
+
+function finishWorkout() {
+  const next = (currentWorkout === 'A') ? 'B' : 'A';
+  setState({ currentWorkout: next });
+  currentWorkout = next;
+  todayLogs = {};
+  renderWorkout();
 }
 
 function setSyncState(s) {
@@ -695,6 +822,9 @@ function renderWorkout() {
         <div class="date-sub">Today</div>
       </div>
     </div>
+    <button class="btn btn-gold" style="width:100%;margin-top:0.625rem;" onclick="confirmFinishWorkout()">
+      ✓ Finish Workout &amp; Switch to ${currentWorkout === 'A' ? 'B' : 'A'}
+    </button>
   `;
 
   let html = '';
@@ -742,6 +872,7 @@ function buildExerciseCard(ex, log, isLogged, prevLog) {
           ${prevLog ? `<div class="ex-last">Last: <strong>${prevLog.sets}&times;${prevLog.reps} @ ${prevLog.weight}kg</strong></div>` : ''}
         </div>
         <div class="ex-actions">
+          <button class="btn btn-ghost btn-sm" style="padding:0.35rem 0.6rem;" onclick="event.stopPropagation();openRefModal('${ex.id}','${ex.name}','${ex.notes}')">?</button>
           ${isLogged
             ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();togglePanel('${ex.id}')">Edit</button>`
             : `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();togglePanel('${ex.id}')">Log</button>`
@@ -902,6 +1033,43 @@ function findExercise(id) {
     }
   }
   return null;
+}
+
+function openRefModal(exId, exName, exNotes) {
+  const url = EXERCISE_VIDEOS[exId];
+  if (url) {
+    window.open(url, '_blank');
+    return;
+  }
+  document.getElementById('modalTitle').textContent = exName;
+  document.getElementById('modalPrescription').textContent = exNotes.replace(/&times;/g,'×').replace(/&ndash;/g,'–');
+  document.getElementById('modalNotes').textContent = EXERCISE_NOTES[exId] || '';
+  document.getElementById('refModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRefModal() {
+  document.getElementById('refModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('refModal')) closeRefModal();
+}
+
+function resetApp() {
+  if (confirm('Reset all local data? Your Google Sheet is unaffected.')) {
+    const url = localStorage.getItem('gymtrack_script_url');
+    localStorage.clear();
+    if (url) localStorage.setItem('gymtrack_script_url', url);
+    todayLogs = {};
+    allLogs = [];
+    weightLogs = [];
+    SCRIPT_URL = url || '';
+    renderWorkout();
+    updateSettingsStatus();
+    alert('Reset complete. Now on Workout B.');
+  }
 }
 
 function saveScriptUrl() {

@@ -724,11 +724,20 @@ function confirmFinishWorkout() {
   }
 }
 
-function finishWorkout() {
+async function finishWorkout() {
+  // Push all today's logs to Sheets
+  if (SCRIPT_URL) {
+    setSyncState('syncing');
+    const logsToSync = Object.values(todayLogs);
+    for (const log of logsToSync) {
+      await apiFetch({ action: 'saveLog', ...log });
+    }
+  }
   const next = (currentWorkout === 'A') ? 'B' : 'A';
-  setState({ currentWorkout: next });
+  setState({ currentWorkout: next, todayLogs: { date: '', logs: {} } });
   currentWorkout = next;
   todayLogs = {};
+  allLogs = (getState().allLogs || []);
   renderWorkout();
 }
 
@@ -941,10 +950,6 @@ async function saveExerciseLog(exId) {
   const msg = document.getElementById('saved-' + exId);
   msg.classList.add('show');
   setTimeout(() => msg.classList.remove('show'), 2000);
-
-  if (SCRIPT_URL) {
-    await apiFetch({ action: 'saveLog', ...logEntry });
-  }
 }
 
 async function saveWeight() {
@@ -1109,12 +1114,23 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) renderWorkout();
 });
 
+// Always restore from localStorage immediately so UI is never blank on reload
+const savedState = getState();
+const savedTodayLogs = savedState.todayLogs || {};
+if (savedTodayLogs.date === today) {
+  todayLogs = savedTodayLogs.logs || {};
+}
+const savedAllLogs = savedState.allLogs || [];
+if (savedAllLogs.length) allLogs = savedAllLogs;
+
+renderWorkout();
+updateSettingsStatus();
+
+// Then sync from Sheets in background
 if (SCRIPT_URL) {
   setSyncState('synced');
   loadTodayLogs();
 } else {
   setSyncState('');
-  renderWorkout();
 }
-updateSettingsStatus();
 </script>

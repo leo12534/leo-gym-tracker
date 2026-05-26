@@ -779,10 +779,16 @@ async function loadTodayLogs() {
   const data = await apiFetch({ action: 'getLogs' });
   if (data && data.logs) {
     allLogs = data.logs;
-    todayLogs = {};
-    data.logs.filter(l => l.date === today).forEach(l => {
-      todayLogs[l.exercise] = l;
-    });
+    // Only use Sheets data for today if we have no local logs for today
+    // Local logs are the source of truth until Finish Workout syncs them
+    const localTodayLogs = getState().todayLogs || {};
+    const hasLocalToday = localTodayLogs.date === today && Object.keys(localTodayLogs.logs || {}).length > 0;
+    if (!hasLocalToday) {
+      todayLogs = {};
+      data.logs.filter(l => l.date === today).forEach(l => {
+        todayLogs[l.exercise] = l;
+      });
+    }
     setSyncState('synced');
   } else {
     const saved = getState().todayLogs || {};
